@@ -108,14 +108,14 @@
   </pre>
 3. Function qurantine dan return file untuk mobilisasi file
    * Erorr handling untuk mengecek ketersediaan direkotri yang dituju
-     <pre>
+    <pre>
        int directory_exists(const char *path) {
     struct stat st;
     return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
 }
-     </pre>
+   </pre>
    * Function quarantine dan return file
-     <pre>
+   <pre>
        void move_files(const char *src, const char *dest, const char *action) {
     if (!directory_exists(src)) {
         fprintf(stderr, "Source directory %s does not exist.\n", src);
@@ -149,7 +149,7 @@
     }
     closedir(dir);
 }
-     </pre>
+</pre>
 4. Function eradicate untuk menghapus seluruh file dalam code quarantine
 <pre>
   void eradicate_files() {
@@ -226,7 +226,7 @@
 }
 </pre>
 7. Log activity unutk mencatat segala aktivitas starterkit ke dalam file log
-   <pre>
+<pre>
      void log_activity(const char *message) {
     FILE *log = fopen(LOG_FILE, "a");
     if (!log) {
@@ -262,6 +262,6 @@
 
     return EXIT_SUCCESS;
 }
-   </pre>
+</pre>
 # Soal 3
 # Soal 4
