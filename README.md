@@ -263,6 +263,7 @@
 }
 </pre>
 <h3>Note untuk soal 3</h3>
-* Untuk error handling ketika ./starterkit --x, outputnya harus konsisten (seperti ini "fprintf(stderr, "Usage: %s --decrypt | --quarantine | --return | --eradicate | --shutdown\n", argv[0]);")
+Untuk error handling ketika ./starterkit --x, outputnya harus konsisten (seperti ini "fprintf(stderr, "Usage: %s --decrypt | --quarantine | --return | --eradicate | --shutdown\n", argv[0]);")
+
 # Soal 3
 # Soal 4
