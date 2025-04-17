@@ -2,7 +2,7 @@
 # Soal 1
 # Soal 2
 1. Import library dan deklarasi direktori atau file
-   <pre>
+<pre>
      #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,9 +19,9 @@
 #define QUARANTINE_DIR "quarantine"
 #define PID_FILE "decrypt.pid"
 #define LOG_FILE "activity.log"
-   </pre>
+</pre>
 2. Function daemon dan decode base64
-  <pre>
+<pre>
     void decrypt_daemon() {
     pid_t pid = fork();
 
@@ -83,8 +83,8 @@
         sleep(5);
     }
 }
-  </pre>
-  <pre>
+</pre>
+<pre>
     char* decode_base64(const char* base64_input) {
     int length = strlen(base64_input);
     int decoded_length = (length * 3) / 4;  
@@ -105,14 +105,14 @@
 
     return (char*)decoded_data;
 }
-  </pre>
+</pre>
 3. Function qurantine dan return file untuk mobilisasi file
    * Erorr handling untuk mengecek ketersediaan direkotri yang dituju
-    <pre>
+   <pre>
        int directory_exists(const char *path) {
     struct stat st;
     return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
-}
+   }
    </pre>
    * Function quarantine dan return file
    <pre>
@@ -148,7 +148,6 @@
         }
     }
     closedir(dir);
-}
 </pre>
 4. Function eradicate untuk menghapus seluruh file dalam code quarantine
 <pre>
@@ -263,5 +262,7 @@
     return EXIT_SUCCESS;
 }
 </pre>
+<h3>Note untuk soal 3</h3>
+* Untuk error handling ketika ./starterkit --x, outputnya harus konsisten (seperti ini "fprintf(stderr, "Usage: %s --decrypt | --quarantine | --return | --eradicate | --shutdown\n", argv[0]);")
 # Soal 3
 # Soal 4
