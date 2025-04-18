@@ -914,7 +914,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     }
    </pre>
    Berfungsi untuk menampilkan proses milik user tertentu, termasuk penggunaan CPU & memorynya.
-   * Command: <pre> ./debugmon list <user> </pre>
+   * Command: <pre> './debugmon list <user>' </pre>
    
 
     
