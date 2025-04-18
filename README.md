@@ -26,6 +26,58 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 * ptr → pointer ke data hasil download.
 * size * nmemb → total ukuran data yang ditulis.
 * fwrite(...) → nulis data ke file (biasanya ke Clues.zip)
+
+1. Fungsi Donwload dan Unzip
+<pre>
+    void download_and_unzip() {
+    struct stat st = {0};
+    if (stat("Clues", &st) == 0) {
+        printf("Clues directory already exists. Skipping download.\n");
+        return;
+    }
+
+    CURL *curl = curl_easy_init();
+    if (!curl) {
+        fprintf(stderr, "Failed to initialize curl\n");
+        return;
+    }
+
+    FILE *fp = fopen("Clues.zip", "wb");
+    if (!fp) {
+        fprintf(stderr, "Failed to create Clues.zip\n");
+        curl_easy_cleanup(curl);
+        return;
+    }
+
+    curl_easy_setopt(curl, CURLOPT_URL, URL);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+    CURLcode res = curl_easy_perform(curl);
+    fclose(fp);
+    curl_easy_cleanup(curl);
+
+    if (res != CURLE_OK) {
+        fprintf(stderr, "Download failed: %s\n", curl_easy_strerror(res));
+        remove("Clues.zip");
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        execlp("unzip", "unzip", "Clues.zip", NULL);
+        perror("execlp failed");
+        exit(EXIT_FAILURE);
+    } else if (pid > 0) {
+        wait(NULL);
+        remove("Clues.zip");
+    } else {
+        perror("fork failed");
+    }
+}
+</pre>pre
+    
           
 # Soal 2
 1. Import library dan deklarasi direktori atau file
