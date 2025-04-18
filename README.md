@@ -789,6 +789,7 @@ kodenya bisa diselesaikan lagi sampai selesai.
 Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat memantau semua aktivitas di komputer.
 
 1. Header dan Definisi
+   <pre>
    ```c
     #define _GNU_SOURCE
 
@@ -806,7 +807,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     * Mengaktifkan fitur tambahan dari GNU C Library
     * Header untuk operasi file, direktori, pengguna, sinyal, waktu, dan sebagainya
       
-2. Fungsi Log Aktivitas
+3. Fungsi Log Aktivitas
    <pre>
     void log_entry(const char *username, const char *procname, const char *status) {
         FILE *log = fopen("debugmon.log", "a");
@@ -823,7 +824,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
    Berfungsi untuk menuliskan log ke dalam debugmon.log dalam format waktu, nama proses, dan status.
    * Command: <pre> cat debugmon.log </pre>
 
-3. Mendapatkan UID
+4. Mendapatkan UID
    <pre>
     uid_t get_uid(const char *username) {
         struct passwd *pwd = getpwnam(username);
@@ -835,7 +836,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     } </pre>
    Berfungsi untuk mengambil UID dari username, penting untuk menyaring proses milik user tersebut di /proc.
 
-4. Menampilkan Proses User
+5. Menampilkan Proses User
    <pre>
     void list_processes(const char *username) {
         uid_t target_uid = get_uid(username);
@@ -913,7 +914,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
    Berfungsi untuk menampilkan proses milik user tertentu, termasuk penggunaan CPU & memorynya.
    * Command: <pre> `./debugmon list <user>` </pre>
 
-5. Fungsi Daemonize
+6. Fungsi Daemonize
    <pre>
     void daemonize() {
         pid_t pid = fork();
@@ -934,7 +935,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     } </pre>
     Menjadikan proses daemon (background).
 
-6. Log Proses User ke File
+7. Log Proses User ke File
    <pre>
     void log_user_processes(const char *username) {
         uid_t target_uid = get_uid(username);
@@ -978,7 +979,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     } </pre>
     Seperti list_processes, tapi hanya mencatat log.
 
-7. Menjalankan Daemon
+8. Menjalankan Daemon
    <pre>
     void run_daemon(const char *username) {
         pid_t pid = fork();
@@ -1015,7 +1016,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
    Menjalankan proses daemon di background yang mencatat aktivitas proses setiap 10 detik.
    * Command: <pre> `./debugmon daemon <user>` </pre>
 
-8. Menghentikan Daemon
+9. Menghentikan Daemon
    <pre>
     void stop_daemon(const char *username) {
         char pidfile[256];
@@ -1040,7 +1041,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
    Membaca PID dari file /tmp/debugmon_<username>.pid dan kirim sinyal SIGTERM.
    * Command: <pre> `./debugmon stop <user>` </pre>
 
-9. Fail User
+10. Fail User
    <pre>
     void fail_user(const char *username) {
         uid_t target_uid = get_uid(username);
@@ -1088,7 +1089,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
    Menghentikan (membunuh) semua proses milik user menggunakan SIGKILL.
    * Command: <pre> `./debugmon fail <user>` </pre>
 
-10. Revert User
+11. Revert User
     <pre>
     void revert_user(const char *username) {
         log_entry(username, "restore", "RUNNING");
@@ -1097,7 +1098,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     Menandai bahwa user “dipulihkan” dalam log.
     * Command: <pre> `./debugmon revert <user>` </pre>
 
-11. Fungsi Main
+12. Fungsi Main
     <pre>
     int main(int argc, char *argv[]) {
         if (argc != 3) {
