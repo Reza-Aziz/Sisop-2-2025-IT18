@@ -803,9 +803,27 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     #include <signal.h>
     #include <time.h>
     #include <sys/stat.h>  </pre>
-
     * Mengaktifkan fitur tambahan dari GNU C Library
     * Header untuk operasi file, direktori, pengguna, sinyal, waktu, dan sebagainya
+      
+2. Fungsi Log Aktivitas
+   <pre>
+    void log_entry(const char *username, const char *procname, const char *status) {
+    FILE *log = fopen("debugmon.log", "a");
+    if (!log) return;
+
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char timestamp[64];
+    strftime(timestamp, sizeof(timestamp), "[%d:%m:%Y]-%H:%M:%S", t);
+
+    fprintf(log, "%s_%s_%s\n", timestamp, procname, status);
+    fclose(log);
+    }
+   </pre>
+   Untuk menuliskan log ke dalam debugmon.log dalam format waktu, nama proses, dan status.
+   * Command: <pre> cat debugmon.log </pre>
+
 
     
    
