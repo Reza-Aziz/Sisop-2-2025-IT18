@@ -821,9 +821,101 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     fclose(log);
     }
    </pre>
-   Untuk menuliskan log ke dalam debugmon.log dalam format waktu, nama proses, dan status.
+   Berfungsi untuk menuliskan log ke dalam debugmon.log dalam format waktu, nama proses, dan status.
    * Command: <pre> cat debugmon.log </pre>
 
+3. Mendapatkan UID
+   <pre>
+    uid_t get_uid(const char *username) {
+    struct passwd *pwd = getpwnam(username);
+    if (!pwd) {
+        fprintf(stderr, "User '%s' not found.\n", username);
+        exit(EXIT_FAILURE);
+    }
+    return pwd->pw_uid;
+    }
+   </pre>
+   Berfungsi untuk mengambil UID dari username, penting untuk menyaring proses milik user tersebut di /proc.
+
+4. Menampilkan Proses User
+   <pre>
+    void list_processes(const char *username) {
+    uid_t target_uid = get_uid(username);
+    DIR *proc = opendir("/proc");
+    if (!proc) {
+        perror("opendir /proc");
+        exit(EXIT_FAILURE);
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(proc)) != NULL) {
+        if (!isdigit(entry->d_name[0])) continue;
+
+        char status_path[256], stat_path[256], cmdline_path[256];
+        snprintf(status_path, sizeof(status_path), "/proc/%s/status", entry->d_name);
+        snprintf(stat_path, sizeof(stat_path), "/proc/%s/stat", entry->d_name);
+        snprintf(cmdline_path, sizeof(cmdline_path), "/proc/%s/cmdline", entry->d_name);
+
+        FILE *status_file = fopen(status_path, "r");
+        if (!status_file) continue;
+
+        uid_t uid = -1;
+        char line[256];
+        while (fgets(line, sizeof(line), status_file)) {
+            if (strncmp(line, "Uid:", 4) == 0) {
+                sscanf(line, "Uid:\t%d", &uid);
+                break;
+            }
+        }
+        fclose(status_file);
+        if (uid != target_uid) continue;
+
+        FILE *cmdline_file = fopen(cmdline_path, "r");
+        char cmdline[256] = "(unknown)";
+        if (cmdline_file) {
+            fgets(cmdline, sizeof(cmdline), cmdline_file);
+            fclose(cmdline_file);
+            if (strlen(cmdline) == 0) strcpy(cmdline, "(kernel)");
+        }
+
+        FILE *stat_file = fopen(stat_path, "r");
+        long utime = 0, stime = 0;
+        if (stat_file) {
+            char dummy[1024];
+            fgets(dummy, sizeof(dummy), stat_file);
+            char *token = strtok(dummy, " ");
+            int i = 1;
+            while (token) {
+                if (i == 14) utime = atol(token);
+                if (i == 15) stime = atol(token);
+                token = strtok(NULL, " ");
+                i++;
+            }
+            fclose(stat_file);
+        }
+        double cpu_usage = (utime + stime) / (double)sysconf(_SC_CLK_TCK);
+
+        long mem_kb = 0;
+        status_file = fopen(status_path, "r");
+        if (status_file) {
+            while (fgets(line, sizeof(line), status_file)) {
+                if (strncmp(line, "VmRSS:", 6) == 0) {
+                    sscanf(line, "VmRSS: %ld kB", &mem_kb);
+                    break;
+                }
+            }
+            fclose(status_file);
+        }
+
+        printf("PID: %s | CMD: %s | CPU: %.2f sec | MEM: %ld KB\n", entry->d_name, cmdline, cpu_usage, mem_kb);
+    }
+
+    closedir(proc);
+    }
+   </pre>
+   Berfungsi untuk menampilkan proses milik user tertentu, termasuk penggunaan CPU & memorynya.
+   * Command: <pre> ./debugmon list <user> </pre>
+   
 
     
    
