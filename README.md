@@ -18,7 +18,14 @@
 size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     return fwrite(ptr, size, nmemb, stream);
 }
+</curl>pre
+* Fungsi ini dipanggil otomatis sama libcurl saat proses download berjalan.
+* Tujuannya: Nulis data yang diterima ke dalam file (stream).
+* ptr → pointer ke data hasil download.
+* size * nmemb → total ukuran data yang ditulis.
+* fwrite(...) → nulis data ke file (biasanya ke Clues.zip)
 
+<pre>
 void download_and_unzip() {
     struct stat st = {0};
     if (stat("Clues", &st) == 0) {
@@ -260,7 +267,7 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-                 </pre> 
+                 </pre>
           
 # Soal 2
 1. Import library dan deklarasi direktori atau file
