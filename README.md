@@ -260,8 +260,8 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
-     <pre>
+                 </pre> 
+          
 # Soal 2
 1. Import library dan deklarasi direktori atau file
 <pre>
