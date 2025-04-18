@@ -27,7 +27,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 * size * nmemb → total ukuran data yang ditulis.
 * fwrite(...) → nulis data ke file (biasanya ke Clues.zip)
 
-1. Fungsi Donwload dan Unzip
+2. Fungsi Donwload dan Unzip
 <pre>
     void download_and_unzip() {
     struct stat st = {0};
@@ -129,8 +129,180 @@ void filter_files() {
 * Validasi nama file
 * File valid → pindah ke Filtered/
 * File gak valid → dihapus
-    
-          
+
+4. Fungsi Combine sesuai urutan angka dan huruf
+<pre>
+void combine_files() {
+    DIR *dir = opendir("Filtered");
+    if (!dir) {
+        fprintf(stderr, "Filtered directory not found\n");
+        return;
+    }
+
+    char *numbers[MAX_FILES], *letters[MAX_FILES];
+    int n = 0, l = 0;
+    struct dirent *ent;
+
+    while ((ent = readdir(dir)) != NULL) {
+        char *filename = ent->d_name;
+        if (filename[0] == '.') continue;
+
+        if (isdigit(filename[0])) {
+            numbers[n++] = strdup(filename);
+        } else if (isalpha(filename[0])) {
+            letters[l++] = strdup(filename);
+        }
+    }
+    closedir(dir);
+
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (atoi(numbers[i]) > atoi(numbers[j])) {
+                char *tmp = numbers[i];
+                numbers[i] = numbers[j];
+                numbers[j] = tmp;
+            }
+        }
+    }
+
+    for (int i = 0; i < l - 1; i++) {
+        for (int j = i + 1; j < l; j++) {
+            if (strcmp(letters[i], letters[j]) > 0) {
+                char *tmp = letters[i];
+                letters[i] = letters[j];
+                letters[j] = tmp;
+            }
+        }
+    }
+
+    FILE *combined = fopen("Combined.txt", "w");
+    if (!combined) {
+        perror("Failed to create Combined.txt");
+        return;
+    }
+
+    int i = 0, j = 0;
+    while (i < n || j < l) {
+        if (i < n) {
+            char path[MAX_FILENAME];
+            snprintf(path, MAX_FILENAME, "Filtered/%s", numbers[i]);
+            FILE *f = fopen(path, "r");
+            if (f) {
+                int ch;
+                while ((ch = fgetc(f)) != EOF)
+                    fputc(ch, combined);
+                fclose(f);
+                remove(path);
+            }
+            free(numbers[i++]);
+        }
+
+        if (j < l) {
+            char path[MAX_FILENAME];
+            snprintf(path, MAX_FILENAME, "Filtered/%s", letters[j]);
+            FILE *f = fopen(path, "r");
+            if (f) {
+                int ch;
+                while ((ch = fgetc(f)) != EOF)
+                    fputc(ch, combined);
+                fclose(f);
+                remove(path);
+            }
+            free(letters[j++]);
+        }
+    }
+
+    rmdir("Filtered");
+    fclose(combined);
+}
+</pre>
+* Buka folder Filtered/
+* Memisahkan file jadi 2 grup
+* Urutkan masing-masing grup (angka secara numerik, huruf secara alfabet)
+* Menggambungkan file ke Combined.txt
+* ulangi sampai habis
+* Hapus file setelah digabung
+
+5. Fungsi Rot13
+<pre>
+    void rot13(char *str) {
+    for (; *str; str++) {
+        if (isalpha(*str)) {
+            if ((*str >= 'a' && *str <= 'm') || (*str >= 'A' && *str <= 'M')) {
+                *str += 13;
+            } else {
+                *str -= 13;
+            }
+        }
+    }
+}
+</pre>
+
+6. Decode Combined.txt menggunakan fungsi Rot13
+<pre>
+    void decode_file() {
+    FILE *combined = fopen("Combined.txt", "r");
+    if (!combined) {
+        fprintf(stderr, "Combined.txt not found\n");
+        return;
+    }
+
+    fseek(combined, 0, SEEK_END);
+    long size = ftell(combined);
+    fseek(combined, 0, SEEK_SET);
+
+    char *content = malloc(size + 1);
+    if (!content) {
+        perror("malloc failed");
+        fclose(combined);
+        return;
+    }
+
+    fread(content, 1, size, combined);
+    content[size] = '\0';
+    fclose(combined);
+
+    rot13(content);
+
+    FILE *decoded = fopen("Decoded.txt", "w");
+    if (decoded) {
+        fputs(content, decoded);
+        fclose(decoded);
+    } else {
+        perror("Failed to create Decoded.txt");
+    }
+
+    free(content);
+}
+</pre>
+
+7. Fungsi Main
+<pre>
+    int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        download_and_unzip();
+    } else if (argc == 3 && strcmp(argv[1], "-m") == 0) {
+        if (strcmp(argv[2], "Filter") == 0) {
+            filter_files();
+        } else if (strcmp(argv[2], "Combine") == 0) {
+            combine_files();
+        } else if (strcmp(argv[2], "Decode") == 0) {
+            decode_file();
+        } else {
+            fprintf(stderr, "Invalid command.\n");
+        }
+    } else {
+        fprintf(stderr, "Usage:\n");
+        fprintf(stderr, "  ./action                # Download & extract Clues.zip\n");
+        fprintf(stderr, "  ./action -m Filter      # Filter files\n");
+        fprintf(stderr, "  ./action -m Combine     # Gabungkan isi file\n");
+        fprintf(stderr, "  ./action -m Decode      # Decode ROT13 hasilnya\n");
+    }
+
+    return 0;
+}
+</pre>
+
 # Soal 2
 1. Import library dan deklarasi direktori atau file
 <pre>
