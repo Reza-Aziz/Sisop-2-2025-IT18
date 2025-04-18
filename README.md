@@ -76,7 +76,59 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
         perror("fork failed");
     }
 }
-</pre>pre
+</pre> 
+* Cek apakah folder Clues sudah ada.
+* Kalau belum, download file ZIP dari internet.
+* Simpan sebagai Clues.zip.
+* Lalu unzip isinya ke folder Clues.
+* Hapus file zip-nya setelah selesai.
+
+3. Fungsi Filter txt 1 huruf dan 1 angka
+<pre>
+void filter_files() {
+    mkdir("Filtered", 0755);
+    char path[MAX_FILENAME];
+    struct dirent *ent;
+    DIR *dir;
+
+    for (char c = 'A'; c <= 'D'; c++) {
+        snprintf(path, MAX_FILENAME, "Clues/Clue%c", c);
+        dir = opendir(path);
+        if (!dir) continue;
+
+        while ((ent = readdir(dir)) != NULL) {
+            char *filename = ent->d_name;
+            if (filename[0] == '.') continue;
+
+            int valid = 0;
+            size_t len = strlen(filename);
+            if (len == 5 && strcmp(filename + len - 4, ".txt") == 0) {
+                char base = filename[0];
+                if ((islower(base) || isdigit(base))) {
+                    valid = 1;
+                }
+            }
+
+            char src_path[MAX_FILENAME], dest_path[MAX_FILENAME];
+            snprintf(src_path, MAX_FILENAME, "%s/%s", path, filename);
+
+            if (valid) {
+                snprintf(dest_path, MAX_FILENAME, "Filtered/%s", filename);
+                rename(src_path, dest_path);
+            } else {
+                remove(src_path);
+            }
+        }
+
+        closedir(dir);
+    }
+}
+</pre>
+* Loop ClueA–ClueD
+* Baca semua file di sana
+* Validasi nama file
+* File valid → pindah ke Filtered/
+* File gak valid → dihapus
     
           
 # Soal 2
