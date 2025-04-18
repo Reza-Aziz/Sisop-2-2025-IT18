@@ -802,7 +802,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
     #include <ctype.h>
     #include <signal.h>
     #include <time.h>
-    #include <sys/stat.h></pre>
+    #include <sys/stat.h>  </pre>
 
     * Mengaktifkan fitur tambahan dari GNU C Library
     * Header untuk operasi file, direktori, pengguna, sinyal, waktu, dan sebagainya
