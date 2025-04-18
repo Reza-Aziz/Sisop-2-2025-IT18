@@ -790,6 +790,7 @@ Pada soal  ini kita diminta untuk membuat sebuah program debugmon yang dapat mem
 
 1. Header dan Definisi
    <pre>
+    ```c
     #define _GNU_SOURCE
 
     #include <stdio.h>
